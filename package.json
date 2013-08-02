@@ -1,0 +1,12 @@
+{
+  "name": "lively-fs-helper",
+  "version": "0.0.1",
+  "description": "Small wrapper around fs to easily create file and directory structures. Currently used for testing stuff tht depends on files.",
+  "main": "index.js",
+  "keywords": ["LivelyKernel","LivelyWeb"],
+  "author": "RobertKrahn",
+  "license": "MIT",
+  "dependencies": {
+    "async": "~0.2"
+  }
+}
