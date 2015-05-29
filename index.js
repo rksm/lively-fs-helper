@@ -1,7 +1,9 @@
-var async = require("async"),
-    path = require("path"),
-    fs = require("fs"),
-    exec = require("child_process").exec;
+/*global require, module, console, setTimeout*/
+
+var lang = require("lively.lang"),
+    fs = require('fs'),
+    exec = require('child_process').exec,
+    path = require('path');
 
 var tempFiles = [], tempDirs = [];
 function registerTempFile(filename) {
@@ -17,32 +19,33 @@ function createTempFile(filename, content) {
 
 function createTempDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-  console.log('Created ' + dir);
   tempDirs.unshift(dir);
 }
 
 function cleanupTempFiles(thenDo) {
-  async.series(
-    tempFiles.map(function(file) {
-      return function(cb) {
+  lively.lang.fun.composeAsync(
+    n => lang.arr.mapAsyncSeries(
+      tempFiles,
+      (file, _, n) => {
         if (fs.existsSync(file)) fs.unlinkSync(file);
         else console.warn('trying to cleanup file %s but it did not exist', file);
-        cb();
-      };
-    }).concat(tempDirs.map(function(dir) {
-      return function(cb) {
-        exec('rm -rfd ' + dir, function(code, out, err) { cb(); });
-      }
-    })),
-    function() {
+        n();
+      }, err => { n(err); }
+    ),
+    n => lang.arr.mapAsyncSeries(
+      tempDirs,
+      (dir, _, n) => {
+        exec('rm -rf ' + dir, function(code, out, err) { n(); });
+      }, err => n(err)),
+    n => {
       tempFiles = [];
       tempDirs = [];
-      thenDo && thenDo();
+      n();
     }
-  )
+  )(thenDo);
 }
 
-function createDirStructure(basePath, spec, thenDo) {
+function createDirStructure(basePath, spec) {
   // spec is an object like
   // {"foo": {"bar.js": "bla"}}
   // will create dir "foo/" and file foo/bar.js with "bla" as content
@@ -58,12 +61,11 @@ function createDirStructure(basePath, spec, thenDo) {
       continue;
     }
   }
-  thenDo && thenDo();
 }
 
 module.exports = {
-    registerTempFile: registerTempFile,
-    createTempFile: createTempFile,
-    cleanupTempFiles: cleanupTempFiles,
-    createDirStructure: createDirStructure
+  registerTempFile: registerTempFile,
+  createTempFile: createTempFile,
+  cleanupTempFiles: cleanupTempFiles,
+  createDirStructure: createDirStructure,
 }
