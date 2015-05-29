@@ -24,20 +24,23 @@ function createTempDir(dir) {
 
 function cleanupTempFiles(thenDo) {
   lively.lang.fun.composeAsync(
-    n => lang.arr.mapAsyncSeries(
-      tempFiles,
-      (file, _, n) => {
-        if (fs.existsSync(file)) fs.unlinkSync(file);
-        else console.warn('trying to cleanup file %s but it did not exist', file);
-        n();
-      }, err => { n(err); }
-    ),
-    n => lang.arr.mapAsyncSeries(
-      tempDirs,
-      (dir, _, n) => {
-        exec('rm -rf ' + dir, function(code, out, err) { n(); });
-      }, err => n(err)),
-    n => {
+    function(n) {
+      lang.arr.mapAsyncSeries(
+        tempFiles,
+        function(file, _, n) {
+          if (fs.existsSync(file)) fs.unlinkSync(file);
+          else console.warn('trying to cleanup file %s but it did not exist', file);
+          n();
+        }, function(err) { n(err); })
+    },
+    function(n) {
+      lang.arr.mapAsyncSeries(
+        tempDirs,
+        function(dir, _, n) {
+          exec('rm -rf ' + dir, function(code, out, err) { n(); });
+        }, function(err) { n(err); });
+    },
+    function(n) {
       tempFiles = [];
       tempDirs = [];
       n();
